@@ -23,10 +23,12 @@
 # In[1]:
 import logging
 logging.basicConfig()
-logging.getLogger().setLevel(logging.DEBUG)
+logging.getLogger().setLevel(logging.INFO)
+import os
 
 MAX_GRAD_NORM = 1.2
-EPSILON = 50.0
+EPSILON = float(os.environ.get('EPSILON', 50.0))
+logging.info(f'EPSILON={EPSILON}')
 DELTA = 1e-5
 EPOCHS = 2
 

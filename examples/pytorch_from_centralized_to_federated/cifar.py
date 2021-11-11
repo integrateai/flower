@@ -10,6 +10,7 @@ https://pytorch.org/tutorials/beginner/blitz/cifar10_tutorial.html
 # mypy: ignore-errors
 # pylint: disable=W0223
 
+from tqdm import tqdm
 import sys
 from typing import Tuple
 
@@ -97,7 +98,8 @@ def train(
     # Train the network
     net.to(device)
     net.train()
-    for epoch in range(epochs):  # loop over the dataset multiple times
+    pbar = tqdm(range(epochs))
+    for epoch in pbar:  # loop over the dataset multiple times
         running_loss = 0.0
         for i, data in enumerate(trainloader, 0):
             images, labels = data[0].to(device), data[1].to(device)
@@ -114,7 +116,8 @@ def train(
             # print statistics
             running_loss += loss.item()
             if i % 100 == 99:  # print every 100 mini-batches
-                print("[%d, %5d] loss: %.3f" % (epoch + 1, i + 1, running_loss / 2000))
+                #print("[%d, %5d] loss: %.3f" % (epoch + 1, i + 1, running_loss / 2000))
+                pbar.set_description("[%d, %5d] loss: %.3f" % (epoch + 1, i + 1, running_loss / 2000))
                 running_loss = 0.0
 
 
@@ -153,7 +156,7 @@ def main():
     net = Net().to(DEVICE)
     net.eval()
     print("Start training")
-    train(net=net, trainloader=trainloader, epochs=2, device=DEVICE)
+    train(net=net, trainloader=trainloader, epochs=20, device=DEVICE)
     print("Evaluate model")
     loss, accuracy = test(net=net, testloader=testloader, device=DEVICE)
     print("Loss: ", loss)

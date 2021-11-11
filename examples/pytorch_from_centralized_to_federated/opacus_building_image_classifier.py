@@ -1,9 +1,6 @@
 #!/usr/bin/env python
 # coding: utf-8
 
-# <h1>Table of Contents<span class="tocSkip"></span></h1>
-# <div class="toc"><ul class="toc-item"><li><span><a href="#Building-an-Image-Classifier-with-Differential-Privacy" data-toc-modified-id="Building-an-Image-Classifier-with-Differential-Privacy-1">Building an Image Classifier with Differential Privacy</a></span><ul class="toc-item"><li><span><a href="#Overview" data-toc-modified-id="Overview-1.1">Overview</a></span></li><li><span><a href="#Hyper-parameters" data-toc-modified-id="Hyper-parameters-1.2">Hyper-parameters</a></span></li><li><span><a href="#Data" data-toc-modified-id="Data-1.3">Data</a></span></li><li><span><a href="#Model" data-toc-modified-id="Model-1.4">Model</a></span></li><li><span><a href="#Prepare-for-Training" data-toc-modified-id="Prepare-for-Training-1.5">Prepare for Training</a></span></li><li><span><a href="#Train-the-network" data-toc-modified-id="Train-the-network-1.6">Train the network</a></span></li><li><span><a href="#Test-the-network-on-test-data" data-toc-modified-id="Test-the-network-on-test-data-1.7">Test the network on test data</a></span></li><li><span><a href="#Tips-and-Tricks" data-toc-modified-id="Tips-and-Tricks-1.8">Tips and Tricks</a></span></li><li><span><a href="#Private-Model-vs-Non-Private-Model-Performance" data-toc-modified-id="Private-Model-vs-Non-Private-Model-Performance-1.9">Private Model vs Non-Private Model Performance</a></span></li></ul></li></ul></div>
-
 # # Building an Image Classifier with Differential Privacy
 
 # ## Overview
@@ -31,7 +28,7 @@ logging.getLogger().setLevel(logging.DEBUG)
 MAX_GRAD_NORM = 1.2
 EPSILON = 50.0
 DELTA = 1e-5
-EPOCHS = 10
+EPOCHS = 2
 
 LR = 1e-3
 NUM_WORKERS = 4
@@ -53,8 +50,6 @@ N_ACCUMULATION_STEPS = int(VIRTUAL_BATCH_SIZE / BATCH_SIZE)
 # Now, let's load the CIFAR10 dataset. We don't use data augmentation here because, in our experiments, we found that data augmentation lowers utility when training with DP.
 
 # In[3]:
-
-
 import torch
 import torchvision
 import torchvision.transforms as transforms
@@ -70,7 +65,6 @@ transform = transforms.Compose([
     transforms.ToTensor(),
     transforms.Normalize(CIFAR10_MEAN, CIFAR10_STD_DEV),
 ])
-
 
 # Using torchvision datasets, we can load CIFAR10 and transform the PILImage images to Tensors of normalized range [-1, 1]
 
@@ -106,7 +100,6 @@ from torchvision import models
 
 from cifar import Net
 
-#model = models.resnet18(num_classes=10)
 model = Net()
 
 # Now, let’s check if the model is compatible with Opacus. Opacus does not support all type of Pytorch layers. To check if your model is compatible with the privacy engine, we have provided a util class to validate your model.
@@ -118,6 +111,7 @@ model = Net()
 
 from opacus.dp_model_inspector import DPModelInspector
 
+# Skip this step to avoid the exception
 #inspector = DPModelInspector()
 #inspector.validate(model)
 
@@ -130,7 +124,7 @@ from opacus.dp_model_inspector import DPModelInspector
 from opacus.dp_model_inspector import DPModelInspector
 from opacus.utils import module_modification
 
-model = module_modification.convert_batchnorm_modules(model)
+model = module_modification.nullify_batchnorm_modules(model)
 inspector = DPModelInspector()
 print(f"Is the model valid? {inspector.validate(model)}")
 
@@ -138,18 +132,13 @@ print(f"Is the model valid? {inspector.validate(model)}")
 # For maximal speed, we can check if CUDA is available and supported by the PyTorch installation. If GPU is available, set the `device` variable to your CUDA-compatible device. We can then transfer the neural network onto that device.
 
 # In[8]:
-
-
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-
 model = model.to(device)
 
 
 # We then define our optimizer and loss function. Opacus’ privacy engine can attach to any (first-order) optimizer.  You can use your favorite&mdash;Adam, Adagrad, RMSprop&mdash;as long as it has an implementation derived from [torch.optim.Optimizer](https://pytorch.org/docs/stable/optim.html). In this tutorial, we're going to use [RMSprop](https://pytorch.org/docs/stable/optim.html).
 
 # In[9]:
-
-
 import torch.nn as nn
 import torch.optim as optim
 
@@ -191,8 +180,6 @@ print(f"Using sigma={privacy_engine.noise_multiplier} and C={MAX_GRAD_NORM}")
 # We will then define our train function. This function will train the model for one epoch.
 
 # In[12]:
-
-
 import numpy as np
 
 def train(model, train_loader, optimizer, epoch, device):
@@ -282,10 +269,7 @@ for epoch in tqdm(range(EPOCHS), desc="Epoch", unit="epoch"):
 
 
 # ## Test the network on test data
-
 # In[ ]:
-
-
 top1_acc = test(model, test_loader, device)
 
 
@@ -295,14 +279,3 @@ top1_acc = test(model, test_loader, device)
 # 2. Tuning MAX_GRAD_NORM is very important. Start with a low noise multiplier like .1, this should give comparable performance to a non-private model. Then do a grid search for the optimal MAX_GRAD_NORM value. The grid can be in the range [.1, 10].
 # 3. You can play around with the level of privacy, EPSILON.  Smaller EPSILON means more privacy, more noise -- and hence lower accuracy.  Reducing EPSILON to 5.0 reduces the Top 1 Accuracy to around 53%.  One useful technique is to pre-train a model on public (non-private) data, before completing the training on the private training data.  See the workbook at [bit.ly/opacus-dev-day](https://bit.ly/opacus-dev-day) for an example.
 #
-
-# ## Private Model vs Non-Private Model Performance
-
-# Now let us compare how our private model compares with the non-private ResNet18.
-#
-# We trained a non-private ResNet18 model for 20 epochs using the same hyper-parameters as above and with BatchNorm replaced with GroupNorm. The results of that training and the training that is discussed in this tutorial are summarized in the table below:
-
-# | Model          | Top 1 Accuracy (%) |  ϵ |
-# |----------------|--------------------|---|
-# | ResNet         | 76                 | ∞ |
-# | Private ResNet |         56.61         |  53.54  |

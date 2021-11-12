@@ -10,7 +10,8 @@ https://pytorch.org/tutorials/beginner/blitz/cifar10_tutorial.html
 # mypy: ignore-errors
 # pylint: disable=W0223
 
-
+from tqdm import tqdm
+import sys
 from typing import Tuple
 
 import torch
@@ -20,6 +21,9 @@ import torchvision
 import torchvision.transforms as transforms
 from torch import Tensor
 from torchvision.datasets import CIFAR10
+from iai_cifar import CIFARDataset
+
+from flwr.common.logger import FLOWER_LOGGER
 
 DATA_ROOT = "./dataset"
 
@@ -52,14 +56,28 @@ class Net(nn.Module):
         return x
 
 
-def load_data() -> Tuple[torch.utils.data.DataLoader, torch.utils.data.DataLoader]:
-    """Load CIFAR-10 (training and test set)."""
+def load_data_set() -> Tuple[torch.utils.data.Dataset, torch.utils.data.Dataset]:
     transform = transforms.Compose(
         [transforms.ToTensor(), transforms.Normalize((0.5, 0.5, 0.5), (0.5, 0.5, 0.5))]
     )
-    trainset = CIFAR10(DATA_ROOT, train=True, download=True, transform=transform)
+    # use default if no args
+    train_path = './data/train_centralized.pkl'
+    if len(sys.argv) > 1:
+         train_path = f'./data/split_train_20210816_161809/{sys.argv[1]}'
+
+    # use a fixed test path
+    test_path = './data/test.pkl'
+    FLOWER_LOGGER.info('Loading train set %s', train_path)
+    trainset = CIFARDataset(data_path=train_path, transform=transform)
+    FLOWER_LOGGER.info('Loading test set %s', test_path)
+    testset = CIFARDataset(data_path=test_path, transform=transform)
+    return trainset, testset
+
+
+def load_data() -> Tuple[torch.utils.data.DataLoader, torch.utils.data.DataLoader]:
+    """Load CIFAR-10 (training and test set)."""
+    trainset, testset = load_data_set()
     trainloader = torch.utils.data.DataLoader(trainset, batch_size=32, shuffle=True)
-    testset = CIFAR10(DATA_ROOT, train=False, download=True, transform=transform)
     testloader = torch.utils.data.DataLoader(testset, batch_size=32, shuffle=False)
     return trainloader, testloader
 
@@ -80,7 +98,8 @@ def train(
     # Train the network
     net.to(device)
     net.train()
-    for epoch in range(epochs):  # loop over the dataset multiple times
+    pbar = tqdm(range(epochs))
+    for epoch in pbar:  # loop over the dataset multiple times
         running_loss = 0.0
         for i, data in enumerate(trainloader, 0):
             images, labels = data[0].to(device), data[1].to(device)
@@ -97,7 +116,8 @@ def train(
             # print statistics
             running_loss += loss.item()
             if i % 100 == 99:  # print every 100 mini-batches
-                print("[%d, %5d] loss: %.3f" % (epoch + 1, i + 1, running_loss / 2000))
+                #print("[%d, %5d] loss: %.3f" % (epoch + 1, i + 1, running_loss / 2000))
+                pbar.set_description("[%d, %5d] loss: %.3f" % (epoch + 1, i + 1, running_loss / 2000))
                 running_loss = 0.0
 
 
@@ -136,7 +156,7 @@ def main():
     net = Net().to(DEVICE)
     net.eval()
     print("Start training")
-    train(net=net, trainloader=trainloader, epochs=2, device=DEVICE)
+    train(net=net, trainloader=trainloader, epochs=20, device=DEVICE)
     print("Evaluate model")
     loss, accuracy = test(net=net, testloader=testloader, device=DEVICE)
     print("Loss: ", loss)

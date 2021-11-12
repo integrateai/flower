@@ -13,7 +13,7 @@ import torchvision
 
 import cifar
 
-USE_FEDBN: bool = True
+USE_FEDBN: bool = False
 
 # pylint: disable=no-member
 DEVICE: str = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")

@@ -1,0 +1,84 @@
+{
+    "taskDefinition": {
+        "taskDefinitionArn": "arn:aws:ecs:ca-central-1:787692758114:task-definition/nasron-test-fargate:4",
+        "containerDefinitions": [
+            {
+                "name": "test-container",
+                "image": "787692758114.dkr.ecr.ca-central-1.amazonaws.com/iai_client:nasron-flwr",
+                "cpu": 0,
+                "portMappings": [
+                    {
+                        "containerPort": 8080,
+                        "hostPort": 8080,
+                        "protocol": "tcp"
+                    }
+                ],
+                "essential": true,
+                "entryPoint": [],
+                "command": [],
+                "environment": [],
+                "mountPoints": [],
+                "volumesFrom": [],
+                "disableNetworking": false,
+                "logConfiguration": {
+                    "logDriver": "awslogs",
+                    "options": {
+                        "awslogs-group": "/ecs/nasron-test-fargate",
+                        "awslogs-region": "ca-central-1",
+                        "awslogs-stream-prefix": "ecs"
+                    }
+                }
+            }
+        ],
+        "family": "nasron-test-fargate",
+        "taskRoleArn": "arn:aws:iam::787692758114:role/iai-nasron-fargate-test-ecs-task-role",
+        "executionRoleArn": "arn:aws:iam::787692758114:role/ecsTaskExecutionRole",
+        "networkMode": "awsvpc",
+        "revision": 4,
+        "volumes": [],
+        "status": "ACTIVE",
+        "requiresAttributes": [
+            {
+                "name": "com.amazonaws.ecs.capability.logging-driver.awslogs"
+            },
+            {
+                "name": "ecs.capability.execution-role-awslogs"
+            },
+            {
+                "name": "com.amazonaws.ecs.capability.ecr-auth"
+            },
+            {
+                "name": "com.amazonaws.ecs.capability.docker-remote-api.1.19"
+            },
+            {
+                "name": "com.amazonaws.ecs.capability.task-iam-role"
+            },
+            {
+                "name": "ecs.capability.execution-role-ecr-pull"
+            },
+            {
+                "name": "com.amazonaws.ecs.capability.docker-remote-api.1.18"
+            },
+            {
+                "name": "ecs.capability.task-eni"
+            }
+        ],
+        "placementConstraints": [],
+        "compatibilities": [
+            "EC2",
+            "FARGATE"
+        ],
+        "runtimePlatform": {
+            "cpuArchitecture": "ARM64",
+            "operatingSystemFamily": "LINUX"
+        },
+        "requiresCompatibilities": [
+            "FARGATE"
+        ],
+        "cpu": "1024",
+        "memory": "2048",
+        "registeredAt": 1667483255.294,
+        "registeredBy": "arn:aws:iam::787692758114:user/nasron@integrate.ai"
+    },
+    "tags": []
+}

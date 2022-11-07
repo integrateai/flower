@@ -1,8 +1,9 @@
 #!/bin/bash
 
-#./certificates/generate.sh
+./certificates/generate.sh
 
-#echo "Starting server"
+echo "Starting server"
+
 #python server.py &
 #sleep 3  # Sleep for 3s to give the server enough time to start
 
@@ -11,7 +12,7 @@ python -c "import tensorflow as tf; tf.keras.datasets.cifar10.load_data()"
 
 for i in `seq 0 9`; do
     echo "Starting client $i"
-    python client.py --partition=${i} --host ec2-3-99-164-154.ca-central-1.compute.amazonaws.com &
+    python client.py --partition=${i} &
 done
 
 # This will allow you to use CTRL+C to stop all background processes

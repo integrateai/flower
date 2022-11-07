@@ -74,6 +74,7 @@ def main() -> None:
     # Parse command line argument `partition`
     parser = argparse.ArgumentParser(description="Flower")
     parser.add_argument("--partition", type=int, choices=range(0, 10), required=True)
+    parser.add_argument("--host", type=str, default='localhost')
     args = parser.parse_args()
 
     # Load and compile Keras model
@@ -89,7 +90,7 @@ def main() -> None:
     client = CifarClient(model, x_train, y_train, x_test, y_test)
 
     fl.client.start_numpy_client(
-        server_address="localhost:8080",
+        server_address=f"{args.host}:8080",
         client=client,
         root_certificates=Path(".cache/certificates/ca.crt").read_bytes(),
     )
